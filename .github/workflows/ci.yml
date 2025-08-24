@@ -27,19 +27,16 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: Create artifact directory
-        run: New-Item -ItemType Directory -Force -Path artifact
+      - name: List build output
+        run: dir
         shell: pwsh
 
       - name: Create artifact (zip)
-        # Include all necessary files for deployment
-        run: |
-          $files = @('.next', 'public', 'package.json', 'package-lock.json', 'next.config.js', '.env.production')
-          Compress-Archive -Path $files -DestinationPath artifact/nextjs-build.zip -Force
+        run: Compress-Archive -Path .next,public,package.json,package-lock.json -DestinationPath artifact.zip
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: artifact/nextjs-build.zip
+          path: artifact.zip
