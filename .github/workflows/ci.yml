@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest  # GitHub-hosted runner
 
     steps:
       - name: Checkout code
@@ -27,21 +27,19 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: Create artifact directory
-        run: mkdir artifact
-        shell: pwsh
+      - name: Create artifact folder
+        run: mkdir ${{ github.workspace }}\artifact
 
-      - name: Copy files to artifact directory
-        run: |
-          Copy-Item -Path .next, public, package.json, package-lock.json -Destination ./artifact -Recurse -Force
-        shell: pwsh
+      - name: Create zip artifact
+        run: Compress-Archive -Path @(".next","public","package.json","package-lock.json") -DestinationPath ${{ github.workspace }}\artifact\artifact.zip
+        shell: powershell
 
-      - name: Create artifact zip
-        run: Compress-Archive -Path ./artifact/* -DestinationPath ./nextjs-build.zip -Force
-        shell: pwsh
+      - name: List artifact contents (debug)
+        run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\temp -Force; dir ${{ github.workspace }}\temp
+        shell: powershell
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: ./nextjs-build.zip
+          path: ${{ github.workspace }}\artifact\artifact.zip
