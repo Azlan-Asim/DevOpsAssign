@@ -16,7 +16,7 @@ jobs:
       - name: Download artifact from CI workflow
         uses: actions/download-artifact@v4
         with:
-          name: nextjs-build
+          name: nextjs-build.zip
           path: ./artifact
           # This is the key fix - reference the triggering workflow run
           run-id: ${{ github.event.workflow_run.id }}
