@@ -27,16 +27,21 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: List build output
-        run: dir
+      - name: Create artifact directory
+        run: mkdir artifact
         shell: pwsh
 
-      - name: Create artifact (zip)
-        run: Compress-Archive -Path .next,public,package.json,package-lock.json -DestinationPath artifact.zip
+      - name: Copy files to artifact directory
+        run: |
+          Copy-Item -Path .next, public, package.json, package-lock.json -Destination ./artifact -Recurse -Force
+        shell: pwsh
+
+      - name: Create artifact zip
+        run: Compress-Archive -Path ./artifact/* -DestinationPath ./nextjs-build.zip -Force
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: artifact.zip
+          path: ./nextjs-build.zip

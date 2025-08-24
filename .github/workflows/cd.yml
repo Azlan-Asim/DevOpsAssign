@@ -3,7 +3,7 @@ name: CD
 on:
   workflow_run:
     workflows:
-      - CI
+      - CI        # Must exactly match the CI workflow 'name'
     types:
       - completed
 
@@ -11,18 +11,30 @@ jobs:
   deploy:
     runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
     steps:
-      - name: Download artifact from CI workflow
+      - name: Ensure artifact folder exists
+        run: mkdir ./artifact
+        shell: pwsh
+
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: nextjs-build.zip
+          name: nextjs-build
           path: ./artifact
-          # This is the key fix - reference the triggering workflow run
-          run-id: ${{ github.event.workflow_run.id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}   # Use your PAT here
+
+      - name: List downloaded files (debug)
+        run: dir ./artifact
+        shell: pwsh
 
       - name: Extract artifact
         run: Expand-Archive -Path ./artifact/artifact.zip -DestinationPath ./app -Force
+        shell: pwsh
+
+      - name: Verify extracted files (debug)
+        run: dir ./app
         shell: pwsh
 
       - name: Install production dependencies
