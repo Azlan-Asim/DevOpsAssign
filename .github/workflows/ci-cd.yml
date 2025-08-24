@@ -1,48 +1,70 @@
-name: CI-CD
+# =======================================
+# CI Workflow - Build Next.js
+# =======================================
+name: CI - Build Next.js
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Set PowerShell Execution Policy (process only)
+        run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+        shell: pwsh
 
       - name: Install dependencies
         run: npm install
+        shell: pwsh
 
-      - name: Build Next.js app
+      - name: Build Next.js
         run: npm run build
+        shell: pwsh
+
+      - name: Archive build output
+        run: Compress-Archive -Path .next -DestinationPath nextjs-build.zip
+        shell: pwsh
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: .next
+          path: nextjs-build.zip
 
+# =======================================
+# CD Workflow - Deploy Next.js
+# =======================================
+name: CD - Deploy Next.js
+
+on:
+  workflow_run:
+    workflows: ["CI - Build Next.js"]
+    types: 
+      - completed
+
+jobs:
   deploy:
     runs-on: self-hosted
-    needs: build
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
-          path: ./app/.next
+          path: .
 
-      - name: Install dependencies
-        run: npm install
-        shell: cmd
+      - name: Extract build artifact
+        run: Expand-Archive -Path nextjs-build.zip -DestinationPath .next -Force
+        shell: pwsh
 
-      - name: Start Next.js app
-        run: npm start
-        shell: cmd
+      - name: Deploy
+        run: |
+          echo "Deploying Next.js build..."
+          Get-ChildItem -Recurse .next
+          # Add your actual deployment commands here
+        shell: pwsh
