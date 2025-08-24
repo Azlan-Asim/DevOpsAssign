@@ -6,8 +6,9 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
-    runs-on: windows-latest  # GitHub-hosted runner for CI
+  build:
+    runs-on: windows-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,13 +35,15 @@ jobs:
         run: Compress-Archive -Path @(".next","public","package.json","package-lock.json") -DestinationPath ${{ github.workspace }}\artifact\artifact.zip
         shell: powershell
 
-      - name: List artifact contents (debug)
-        run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\temp -Force; dir ${{ github.workspace }}\temp
-        shell: powershell
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: ${{ github.workspace }}\artifact\artifact.zip
 
   deploy:
-    runs-on: windows-latest    # Use your self-hosted runner for deployment
-    needs: build-and-deploy
+    runs-on: self-hosted
+    needs: build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,20 +52,16 @@ jobs:
         run: mkdir ${{ github.workspace }}\artifact
         shell: powershell
 
-      - name: Copy artifact from build
-        run: Copy-Item -Path ${{ github.workspace }}\artifact\artifact.zip -Destination ${{ github.workspace }}\artifact\artifact.zip -Force
-        shell: powershell
-
-      - name: Verify artifact exists
-        run: dir ${{ github.workspace }}\artifact
-        shell: powershell
+      - name: Download artifact using PAT
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+          path: ${{ github.workspace }}\artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Extract artifact
         run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\app -Force
-        shell: powershell
-
-      - name: Verify extracted files
-        run: dir ${{ github.workspace }}\app
         shell: powershell
 
       - name: Install production dependencies
