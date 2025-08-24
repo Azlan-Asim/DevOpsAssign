@@ -39,7 +39,7 @@ jobs:
         shell: powershell
 
   deploy:
-    runs-on: self-hosted    # Use your self-hosted runner for deployment
+    runs-on: windows-latest    # Use your self-hosted runner for deployment
     needs: build-and-deploy
     steps:
       - name: Checkout repository
