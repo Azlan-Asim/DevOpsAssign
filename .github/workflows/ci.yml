@@ -2,40 +2,41 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run tests
-      run: npm run test
+      - name: Run tests
+        run: npm run test
 
-    - name: Build Next.js app
-      run: npm run build
+      - name: Build Next.js app
+        run: npm run build
 
-    - name: List build output
-      run: dir
-      shell: pwsh
+      - name: List build output
+        run: dir
+        shell: pwsh
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: nextjs-build
-        path: |
-          .next/**
-          package.json
-          package-lock.json
-          public/**
+      - name: Create artifact (zip)
+        run: Compress-Archive -Path .next,public,package.json,package-lock.json -DestinationPath artifact.zip
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: artifact.zip
