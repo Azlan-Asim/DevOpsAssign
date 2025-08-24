@@ -17,6 +17,7 @@ jobs:
       with:
         name: nextjs-build
         path: ./app
+	run-id: ${{ github.event.workflow_run.id }}
 
     - name: Verify files
       run: dir ./app/.next
