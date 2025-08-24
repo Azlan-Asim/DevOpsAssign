@@ -1,0 +1,85 @@
+name: CI-CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest  # GitHub-hosted runner for CI
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Create artifact folder
+        run: mkdir ${{ github.workspace }}\artifact
+        shell: powershell
+
+      - name: Create zip artifact
+        run: Compress-Archive -Path @(".next","public","package.json","package-lock.json") -DestinationPath ${{ github.workspace }}\artifact\artifact.zip
+        shell: powershell
+
+      - name: List artifact contents (debug)
+        run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\temp -Force; dir ${{ github.workspace }}\temp
+        shell: powershell
+
+  deploy:
+    runs-on: self-hosted    # Use your self-hosted runner for deployment
+    needs: build-and-deploy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure artifact folder exists
+        run: mkdir ${{ github.workspace }}\artifact
+        shell: powershell
+
+      - name: Copy artifact from build
+        run: Copy-Item -Path ${{ github.workspace }}\artifact\artifact.zip -Destination ${{ github.workspace }}\artifact\artifact.zip -Force
+        shell: powershell
+
+      - name: Verify artifact exists
+        run: dir ${{ github.workspace }}\artifact
+        shell: powershell
+
+      - name: Extract artifact
+        run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\app -Force
+        shell: powershell
+
+      - name: Verify extracted files
+        run: dir ${{ github.workspace }}\app
+        shell: powershell
+
+      - name: Install production dependencies
+        run: npm install --production
+        working-directory: ${{ github.workspace }}\app
+        shell: powershell
+
+      - name: Set environment variables
+        run: |
+          echo "NODE_ENV=production" >> $env:GITHUB_ENV
+          echo "PORT=3000" >> $env:GITHUB_ENV
+        shell: powershell
+
+      - name: Start Next.js app with PM2
+        run: |
+          npm install -g pm2
+          pm2 stop next-app || true
+          pm2 start npm --name "next-app" -- start
+        working-directory: ${{ github.workspace }}\app
+        shell: powershell
