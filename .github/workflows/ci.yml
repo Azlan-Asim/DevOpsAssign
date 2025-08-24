@@ -28,7 +28,7 @@ jobs:
       run: npm run build
 
     - name: Create artifact (zip)
-      run: Compress-Archive -Path * -DestinationPath artifact.zip
+      run: Compress-Archive -Path . -DestinationPath artifact.zip
       shell: pwsh
 
     - name: Upload artifact
