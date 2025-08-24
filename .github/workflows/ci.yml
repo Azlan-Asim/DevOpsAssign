@@ -30,9 +30,7 @@ jobs:
       run: Compress-Archive -Path . -DestinationPath artifact.zip
       shell: pwsh
 
-	- name: List build files
-  	run: dir
-  	shell: pwsh
+
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
