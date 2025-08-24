@@ -1,4 +1,4 @@
-name: CI-CD
+name: CI-CD Pipeline
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -30,17 +30,23 @@ jobs:
           path: .next
 
   deploy:
-    needs: build
     runs-on: self-hosted
+    needs: build
     steps:
+      - name: Allow PowerShell scripts for this job
+        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+        shell: pwsh
+
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
           path: ./app/.next
 
-      - name: Install PM2
-        run: npm install -g pm2
+      - name: Install dependencies
+        run: npm install
+        shell: pwsh
 
       - name: Start Next.js app
-        run: pm2 start npm --name "next-app" -- start
+        run: npm start
+        shell: pwsh
