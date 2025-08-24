@@ -1,4 +1,4 @@
-name: CI-CD Pipeline
+name: CI-CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,10 +33,6 @@ jobs:
     runs-on: self-hosted
     needs: build
     steps:
-      - name: Allow PowerShell scripts for this job
-        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-        shell: pwsh
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
@@ -45,8 +41,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        shell: pwsh
+        shell: cmd
 
       - name: Start Next.js app
         run: npm start
-        shell: pwsh
+        shell: cmd
