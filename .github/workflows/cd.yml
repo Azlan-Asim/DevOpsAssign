@@ -1,0 +1,41 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: nextjs-build
+        path: ./artifact
+
+    - name: Extract artifact
+      run: Expand-Archive -Path ./artifact/artifact.zip -DestinationPath ./app -Force
+      shell: pwsh
+
+    - name: Install production dependencies
+      run: npm install --production
+      working-directory: ./app
+
+    - name: Set environment variables
+      run: |
+        echo "NODE_ENV=production" >> $env:GITHUB_ENV
+        echo "PORT=3000" >> $env:GITHUB_ENV
+      shell: pwsh
+
+    - name: Start Next.js app with PM2
+      run: |
+        npm install -g pm2
+        pm2 stop next-app || exit 0
+        pm2 start npm --name "next-app" -- start
+      working-directory: ./app
+      shell: pwsh
