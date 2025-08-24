@@ -3,7 +3,7 @@ name: CD
 on:
   workflow_run:
     workflows:
-      - CI        # Must match the CI workflow name exactly
+      - CI       # Must exactly match the CI workflow name
     types:
       - completed
 
@@ -13,22 +13,22 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Ensure artifact folder exists
         run: mkdir ${{ github.workspace }}\artifact
         shell: powershell
 
-      - name: Download artifact
+      - name: Download artifact using PAT
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
           path: ${{ github.workspace }}\artifact
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}   # Must be your PAT secret
 
-      - name: List downloaded files (debug)
+      - name: Verify downloaded artifact
         run: dir ${{ github.workspace }}\artifact
         shell: powershell
 
@@ -36,7 +36,7 @@ jobs:
         run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\app -Force
         shell: powershell
 
-      - name: Verify extracted files (debug)
+      - name: Verify extracted files
         run: dir ${{ github.workspace }}\app
         shell: powershell
 
