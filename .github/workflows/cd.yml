@@ -35,7 +35,7 @@ jobs:
     - name: Start Next.js app with PM2
       run: |
         npm install -g pm2
-        pm2 stop next-app || exit 0
+        pm2 stop next-app || true
         pm2 start npm --name "next-app" -- start
       working-directory: ./app
       shell: pwsh
