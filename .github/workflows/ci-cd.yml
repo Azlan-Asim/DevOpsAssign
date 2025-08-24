@@ -44,6 +44,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     needs: build
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,8 +61,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
+      - name: Verify downloaded artifact
+        run: dir ${{ github.workspace }}\artifact
+        shell: powershell
+
       - name: Extract artifact
         run: Expand-Archive -Path ${{ github.workspace }}\artifact\artifact.zip -DestinationPath ${{ github.workspace }}\app -Force
+        shell: powershell
+
+      - name: Verify extracted files
+        run: dir ${{ github.workspace }}\app
         shell: powershell
 
       - name: Install production dependencies
@@ -78,7 +87,7 @@ jobs:
       - name: Start Next.js app with PM2
         run: |
           npm install -g pm2
-          pm2 stop next-app || true
+          try { pm2 stop next-app } catch {}
           pm2 start npm --name "next-app" -- start
         working-directory: ${{ github.workspace }}\app
         shell: powershell
