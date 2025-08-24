@@ -12,14 +12,14 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-    - name: Download artifact
+    - name: Download build artifact
       uses: actions/download-artifact@v4
       with:
         name: nextjs-build
-        path: ./artifact
+        path: ./app/.next
 
-    - name: Extract artifact
-      run: Expand-Archive -Path ./artifact/artifact.zip -DestinationPath ./app -Force
+    - name: Verify files
+      run: dir ./app/.next
       shell: pwsh
 
     - name: Install production dependencies
